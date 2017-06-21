@@ -1,3 +1,4 @@
 /*
-Db maps node-tree with database queries results.
+Db maps nodes-tree with database queries results.
 */
+package dbfs

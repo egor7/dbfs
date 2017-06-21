@@ -1,6 +1,6 @@
 # DBFS
 
-Dbfs starts a 9P2000 file server making db been visible as file tree.
+Dbfs starts a 9P2000 file server making your db been visible as a file tree.
 
 # 9P2000
 
