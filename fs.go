@@ -15,6 +15,13 @@ type fs struct {
 	fidref map[uint32]uint32
 }
 
+func Newfs() *fs {
+	fs := &fs{
+		fidref: make(map[uint32]uint32),
+	}
+	return fs
+}
+
 func (fs *fs) delrefs() {
 	defer un(lock(&fs.f))
 
@@ -33,10 +40,10 @@ func (fs *fs) decref(fid uint32) {
 	fs.fidref[fid]--
 }
 
-func (fs *fs) proc(rwc io.ReadWriteCloser) {
+func (fs *fs) proc(rwc io.ReadWriteCloser) error {
 	Tx, err := plan9.ReadFcall(rwc)
 	if err != nil {
-		return
+		return perror(EREADFCALL)
 	}
 
 	Rx := &plan9.Fcall{
@@ -46,48 +53,56 @@ func (fs *fs) proc(rwc io.ReadWriteCloser) {
 		Newfid: Tx.Newfid,
 	}
 
+	// var f func(*plan9.Fcall, *plan9.Fcall) error
+	f := fs.Bad
+
 	switch Tx.Type {
-	//case plan9.Tversion:
-	//	fs.delrefs()
-	//	fs.Version(Tx, Rx)
-	//case plan9.Tauth:
-	//	fs.Auth(Tx, Rx)
-	//case plan9.Tattach:
-	//	fs.Attach(Tx, Rx)
-	//case plan9.Tclunk:
-	//	fs.Clunk(Tx, Rx)
-	//case plan9.Tflush:
-	//	fs.Flush(Tx, Rx)
-	//case plan9.Twalk:
-	//	fs.Walk(Tx, Rx)
-	//case plan9.Topen:
-	//	fs.Open(Tx, Rx)
-	//case plan9.Tcreate:
-	//	fs.Create(Tx, Rx)
-	//case plan9.Tread:
-	//	fs.Read(Tx, Rx)
-	//case plan9.Twrite:
-	//	fs.Write(Tx, Rx)
-	//case plan9.Tremove:
-	//	fs.Remove(Tx, Rx)
-	//case plan9.Tstat:
-	//	fs.Stat(Tx, Rx)
-	//case plan9.Twstat:
-	//	fs.Wstat(Tx, Rx)
-	default:
-		fs.BadFcall(Tx, Rx)
+	case plan9.Tversion:
+		fs.delrefs()
+		f = fs.Version
+
+		//case plan9.Tauth:
+		//	fs.Auth(Tx, Rx)
+		//case plan9.Tattach:
+		//	fs.Attach(Tx, Rx)
+		//case plan9.Tclunk:
+		//	fs.Clunk(Tx, Rx)
+		//case plan9.Tflush:
+		//	fs.Flush(Tx, Rx)
+		//case plan9.Twalk:
+		//	fs.Walk(Tx, Rx)
+		//case plan9.Topen:
+		//	fs.Open(Tx, Rx)
+		//case plan9.Tcreate:
+		//	fs.Create(Tx, Rx)
+		//case plan9.Tread:
+		//	fs.Read(Tx, Rx)
+		//case plan9.Twrite:
+		//	fs.Write(Tx, Rx)
+		//case plan9.Tremove:
+		//	fs.Remove(Tx, Rx)
+		//case plan9.Tstat:
+		//	fs.Stat(Tx, Rx)
+		//case plan9.Twstat:
+		//	fs.Wstat(Tx, Rx)
+	}
+	err = f(Tx, Rx)
+	if err != nil {
+		return perror(err.Error())
 	}
 
 	// send - Rx
 	err = plan9.WriteFcall(rwc, Rx)
 	if err != nil {
-		return
+		return perror(err.Error())
 	}
+
+	return nil
 }
 
 func (fs *fs) Version(tx, rx *plan9.Fcall) error {
 	if tx.Msize < plan9.IOHDRSZ {
-		return perror("msize too small")
+		return perror(EVERSION)
 	}
 	if tx.Msize > MSIZE {
 		rx.Msize = MSIZE
@@ -100,11 +115,11 @@ func (fs *fs) Version(tx, rx *plan9.Fcall) error {
 }
 
 func (fs *fs) Auth(tx, rx *plan9.Fcall) error {
-	return perror("authentication not required")
+	return perror(EAUTH)
 }
 
 // oth
 
-func (fs *fs) BadFcall(tx, rx *plan9.Fcall) error {
-	return perror("bad fcall")
+func (fs *fs) Bad(tx, rx *plan9.Fcall) error {
+	return perror(EBAD)
 }
