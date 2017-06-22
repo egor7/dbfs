@@ -34,26 +34,11 @@ func (fs *fs) decref(fid uint32) {
 }
 
 func (fs *fs) proc(rwc io.ReadWriteCloser) {
-	// recv - Tx
 	Tx, err := plan9.ReadFcall(rwc)
 	if err != nil {
 		return
 	}
 
-	// proc - Tx
-	switch Tx.Type {
-	case plan9.Tversion:
-		fs.delrefs()
-	case plan9.Tauth:
-		// nothing
-	case plan9.Twalk:
-		fs.incref(Tx.Fid)
-		// TODO Tx.Newfid exists too, increase?
-	default:
-		fs.incref(Tx.Fid)
-	}
-
-	// proc - Rx
 	Rx := &plan9.Fcall{
 		Type:   Tx.Type + 1,
 		Fid:    Tx.Fid,
@@ -61,24 +46,36 @@ func (fs *fs) proc(rwc io.ReadWriteCloser) {
 		Newfid: Tx.Newfid,
 	}
 
-	// [TODO] make work
-
-	switch Rx.Type {
-	case plan9.Rversion, plan9.Rauth:
-		// nothing
-	//	case plan9.Rattach:
-	//		c.f.Lock()
-	//		c.uid = req.Fid.uid
-	//		c.f.Unlock()
-	//		req.Fid.decRef()
-	//		c.DelFid(req.Fid.num)
-	case plan9.Rwalk, plan9.Rclunk:
-		fs.decref(Tx.Fid)
-		// delfid?
-	case plan9.Rerror:
-		fs.decref(Tx.Fid)
+	switch Tx.Type {
+	//case plan9.Tversion:
+	//	fs.delrefs()
+	//	fs.Version(Tx, Rx)
+	//case plan9.Tauth:
+	//	fs.Auth(Tx, Rx)
+	//case plan9.Tattach:
+	//	fs.Attach(Tx, Rx)
+	//case plan9.Tclunk:
+	//	fs.Clunk(Tx, Rx)
+	//case plan9.Tflush:
+	//	fs.Flush(Tx, Rx)
+	//case plan9.Twalk:
+	//	fs.Walk(Tx, Rx)
+	//case plan9.Topen:
+	//	fs.Open(Tx, Rx)
+	//case plan9.Tcreate:
+	//	fs.Create(Tx, Rx)
+	//case plan9.Tread:
+	//	fs.Read(Tx, Rx)
+	//case plan9.Twrite:
+	//	fs.Write(Tx, Rx)
+	//case plan9.Tremove:
+	//	fs.Remove(Tx, Rx)
+	//case plan9.Tstat:
+	//	fs.Stat(Tx, Rx)
+	//case plan9.Twstat:
+	//	fs.Wstat(Tx, Rx)
 	default:
-		fs.decref(Rx.Fid)
+		fs.BadFcall(Tx, Rx)
 	}
 
 	// send - Rx
@@ -86,4 +83,28 @@ func (fs *fs) proc(rwc io.ReadWriteCloser) {
 	if err != nil {
 		return
 	}
+}
+
+func (fs *fs) Version(tx, rx *plan9.Fcall) error {
+	if tx.Msize < plan9.IOHDRSZ {
+		return perror("msize too small")
+	}
+	if tx.Msize > MSIZE {
+		rx.Msize = MSIZE
+	} else {
+		rx.Msize = tx.Msize
+	}
+	rx.Version = plan9.VERSION9P
+
+	return nil
+}
+
+func (fs *fs) Auth(tx, rx *plan9.Fcall) error {
+	return perror("authentication not required")
+}
+
+// oth
+
+func (fs *fs) BadFcall(tx, rx *plan9.Fcall) error {
+	return perror("bad fcall")
 }
