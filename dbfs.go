@@ -21,6 +21,10 @@ func Listen(network, addr string) error {
 		go func(rwc net.Conn) {
 			defer rwc.Close()
 
+			//fs := &fs{
+			//	fidref: make(map[uint32]uint32),
+			//}
+
 			//proc(rwc)
 		}(rwc)
 	}

@@ -12,7 +12,25 @@ import (
 
 type fs struct {
 	f      sync.Mutex
-	fidmap map[uint32]*bool
+	fidref map[uint32]uint32
+}
+
+func (fs *fs) delrefs() {
+	defer un(lock(&fs.f))
+
+	for fid := range fs.fidref {
+		delete(fs.fidref, fid)
+	}
+}
+
+func (fs *fs) incref(fid uint32) {
+	defer un(lock(&fs.f))
+	fs.fidref[fid]++
+}
+
+func (fs *fs) decref(fid uint32) {
+	defer un(lock(&fs.f))
+	fs.fidref[fid]--
 }
 
 func (fs *fs) proc(rwc io.ReadWriteCloser) {
@@ -25,56 +43,43 @@ func (fs *fs) proc(rwc io.ReadWriteCloser) {
 	// proc - Tx
 	switch Tx.Type {
 	case plan9.Tversion:
-		defer un(lock(&fs.f))
-		for fid := range fs.fidmap {
-			delete(fs.fidmap, fid)
-		}
+		fs.delrefs()
 	case plan9.Tauth:
 		// nothing
+	case plan9.Twalk:
+		fs.incref(Tx.Fid)
+		// TODO Tx.Newfid exists too, increase?
 	default:
-		//		req.Fid = c.GetFid(Tx.Fid)
-		//		req.Fid.incRef()
-		//		if Tx.Type == plan9.Twalk {
-		//			req.Fid.New = c.GetFid(Tx.Newfid)
-		//		}
+		fs.incref(Tx.Fid)
 	}
 
 	// proc - Rx
-	Rx := &plan9.Fcall{}
+	Rx := &plan9.Fcall{
+		Type:   Tx.Type + 1,
+		Fid:    Tx.Fid,
+		Tag:    Tx.Tag,
+		Newfid: Tx.Newfid,
+	}
 
-	//	if req.Err != nil {
-	//		Rx.Type = plan9.Rerror
-	//		Rx.Ename = req.Err.Error()
-	//	} else {
-	//		Rx.Type = Tx.Type + 1
-	//		Rx.Fid = Tx.Fid
-	//	}
-	//	Rx.Tag = Tx.Tag
-	//
-	//
-	//	switch Rx.Type {
-	//	case plan9.Rversion, plan9.Rauth:
-	//		// nothing
+	// [TODO] make work
+
+	switch Rx.Type {
+	case plan9.Rversion, plan9.Rauth:
+		// nothing
 	//	case plan9.Rattach:
 	//		c.f.Lock()
 	//		c.uid = req.Fid.uid
 	//		c.f.Unlock()
 	//		req.Fid.decRef()
 	//		c.DelFid(req.Fid.num)
-	//	case plan9.Rwalk, plan9.Rclunk:
-	//		req.Fid.decRef()
-	//		c.DelFid(req.Fid.num)
-	//	case plan9.Rerror:
-	//		if req.Fid != nil {
-	//			req.Fid.decRef()
-	//		}
-	//	default:
-	//		req.Fid.decRef()
-	//	}
-	//
-	//	if c.getErr() == nil {
-	//		reqout <- req
-	//	}
+	case plan9.Rwalk, plan9.Rclunk:
+		fs.decref(Tx.Fid)
+		// delfid?
+	case plan9.Rerror:
+		fs.decref(Tx.Fid)
+	default:
+		fs.decref(Rx.Fid)
+	}
 
 	// send - Rx
 	err = plan9.WriteFcall(rwc, Rx)
