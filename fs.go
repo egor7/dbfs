@@ -60,35 +60,35 @@ func (fs *fs) proc(rwc io.ReadWriteCloser) error {
 	case plan9.Tversion:
 		fs.delrefs()
 		f = fs.Version
-
-		//case plan9.Tauth:
-		//	fs.Auth(Tx, Rx)
+	case plan9.Tauth:
+		f = fs.Auth
 		//case plan9.Tattach:
-		//	fs.Attach(Tx, Rx)
+		//	fs.Attach
 		//case plan9.Tclunk:
-		//	fs.Clunk(Tx, Rx)
+		//	fs.Clunk
 		//case plan9.Tflush:
-		//	fs.Flush(Tx, Rx)
+		//	fs.Flush
 		//case plan9.Twalk:
-		//	fs.Walk(Tx, Rx)
+		//	fs.Walk
 		//case plan9.Topen:
-		//	fs.Open(Tx, Rx)
+		//	fs.Open
 		//case plan9.Tcreate:
-		//	fs.Create(Tx, Rx)
+		//	fs.Create
 		//case plan9.Tread:
-		//	fs.Read(Tx, Rx)
+		//	fs.Read
 		//case plan9.Twrite:
-		//	fs.Write(Tx, Rx)
+		//	fs.Write
 		//case plan9.Tremove:
-		//	fs.Remove(Tx, Rx)
+		//	fs.Remove
 		//case plan9.Tstat:
-		//	fs.Stat(Tx, Rx)
+		//	fs.Stat
 		//case plan9.Twstat:
-		//	fs.Wstat(Tx, Rx)
+		//	fs.Wstat
 	}
 	err = f(Tx, Rx)
 	if err != nil {
-		return perror(err.Error())
+		Rx.Type = plan9.Rerror
+		Rx.Ename = err.Error()
 	}
 
 	// send - Rx
