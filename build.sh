@@ -1,4 +1,4 @@
 #!/bin/sh
 go fmt
-go build
+#go build
 go test

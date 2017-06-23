@@ -14,7 +14,10 @@ const (
 
 const (
 	EREADFCALL = "E ReadFcall goes wrong"
-	EVERSION   = "E msize too small"
-	EAUTH      = "E authentication not required"
-	EBAD       = "E bad fcall"
+
+	EVERSION = "E msize too small"
+	EAUTH    = "E authentication not required"
+	EBAD     = "E bad fcall"
+
+	ENOPATH = "E file does not exist"
 )

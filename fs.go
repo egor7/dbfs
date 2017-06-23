@@ -5,6 +5,7 @@ package dbfs
 
 import (
 	"io"
+	"path"
 	"sync"
 
 	"9fans.net/go/plan9"
@@ -12,13 +13,16 @@ import (
 
 type fs struct {
 	f      sync.Mutex
+	root   *node
 	fidref map[uint32]uint32
 }
 
 func Newfs() *fs {
 	fs := &fs{
+		root:   &node{nm: "/", child: make(map[string]*node)},
 		fidref: make(map[uint32]uint32),
 	}
+	fs.root.prn = fs.root
 	return fs
 }
 
@@ -62,28 +66,28 @@ func (fs *fs) proc(rwc io.ReadWriteCloser) error {
 		f = fs.Version
 	case plan9.Tauth:
 		f = fs.Auth
-		//case plan9.Tattach:
-		//	fs.Attach
+	case plan9.Tattach:
+		f = fs.Attach
 		//case plan9.Tclunk:
-		//	fs.Clunk
+		//	f = fs.Clunk
 		//case plan9.Tflush:
-		//	fs.Flush
+		//	f = fs.Flush
 		//case plan9.Twalk:
-		//	fs.Walk
+		//	f = fs.Walk
 		//case plan9.Topen:
-		//	fs.Open
+		//	f = fs.Open
 		//case plan9.Tcreate:
-		//	fs.Create
+		//	f = fs.Create
 		//case plan9.Tread:
-		//	fs.Read
+		//	f = fs.Read
 		//case plan9.Twrite:
-		//	fs.Write
+		//	f = fs.Write
 		//case plan9.Tremove:
-		//	fs.Remove
+		//	f = fs.Remove
 		//case plan9.Tstat:
-		//	fs.Stat
+		//	f = fs.Stat
 		//case plan9.Twstat:
-		//	fs.Wstat
+		//	f = fs.Wstat
 	}
 	err = f(Tx, Rx)
 	if err != nil {
@@ -116,6 +120,32 @@ func (fs *fs) Version(tx, rx *plan9.Fcall) error {
 
 func (fs *fs) Auth(tx, rx *plan9.Fcall) error {
 	return perror(EAUTH)
+}
+
+func (fs *fs) Attach(tx, rx *plan9.Fcall) error {
+	if tx.Afid != plan9.NOFID {
+		return perror(EAUTH)
+	}
+
+	aname := path.Clean(tx.Aname)
+	path := split(aname)
+	if len(path) == 0 {
+		// TODO
+	}
+	// TODO
+	//fs.walk(aname)
+
+	//root, err := s.fs.Attach(tx.Uname, tx.Aname)
+	//if err != nil {
+	//	return err
+	//}
+	/// defer un(lock(&fs.f))
+	//fid.node = root.node
+	//fid.uid = root.uid
+	//
+	//stat := root.node.Stat()
+	//rx.Qid = stat.Qid
+	return nil
 }
 
 // oth

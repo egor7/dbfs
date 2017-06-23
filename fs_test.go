@@ -6,16 +6,18 @@ import (
 	"testing"
 )
 
-var txn = []string{}
-
 var tests = []struct {
 	name string
 	tx   uint8
 	rx   uint8
+	fid  uint32
+	afid uint32
 	err  string
 }{
-	{"Tversion", plan9.Tversion, plan9.Rversion, ""},
-	{"Tauth", plan9.Tauth, plan9.Rerror, EAUTH},
+	{"Tversion", plan9.Tversion, plan9.Rversion, plan9.NOFID, plan9.NOFID, ""},
+	{"Tauth", plan9.Tauth, plan9.Rerror, plan9.NOFID, plan9.NOFID, EAUTH},
+	{"Tattach1", plan9.Tattach, plan9.Rerror, plan9.NOFID, plan9.NOFID - 1, EAUTH},
+	{"Tattach2", plan9.Tattach, plan9.Rattach, plan9.NOFID, plan9.NOFID, ""},
 }
 
 type rwcb struct {
@@ -24,10 +26,11 @@ type rwcb struct {
 
 func (_ *rwcb) Close() error { return nil }
 
-func fc(tx uint8) (*plan9.Fcall, error) {
+func proc(tp uint8, fid uint32, afid uint32) (*plan9.Fcall, error) {
 	f := &plan9.Fcall{
-		Type:    tx,
-		Fid:     plan9.NOFID,
+		Type:    tp,
+		Fid:     fid,
+		Afid:    afid,
 		Tag:     plan9.NOTAG,
 		Msize:   131072 + plan9.IOHDRSIZE,
 		Version: plan9.VERSION9P,
@@ -42,7 +45,7 @@ func fc(tx uint8) (*plan9.Fcall, error) {
 	fs := Newfs()
 	err = fs.proc(&b)
 	if err != nil {
-		f, _ = plan9.ReadFcall(&b)
+		f, _ = plan9.ReadFcall(&b) // !! cludge design
 		return f, err
 	}
 
@@ -63,17 +66,17 @@ func TestFs(t *testing.T) {
 	// b.Write([]byte("Hello "))
 	// fmt.Fprintf(&b, "world!")
 
-	for _, f := range tests {
-		rx, err := fc(f.tx)
+	for _, e := range tests {
+		fc, err := proc(e.tx, e.fid, e.afid)
 
 		if err != nil {
-			t.Errorf("%s: '%s'", f.name, err.Error())
+			t.Errorf("%s: '%s'", e.name, err.Error())
 		}
-		if rx.Type == plan9.Rerror && rx.Ename != f.err {
-			t.Errorf("%s: expected '%s', got '%s'", f.name, f.err, rx.Ename)
+		if fc.Type == plan9.Rerror && fc.Ename != e.err {
+			t.Errorf("%s: expected '%s', got '%s'", e.name, e.err, fc.Ename)
 		}
-		if rx.Type != f.rx {
-			t.Errorf("%s: expected (tx->rx): (%d->%d), got (%d->%d)", f.name, f.tx, f.rx, f.tx, rx.Type)
+		if fc.Type != e.rx {
+			t.Errorf("%s: expected (tx->rx): (%d->%d), got (%d->%d)", e.name, e.tx, e.rx, e.tx, fc.Type)
 		}
 	}
 
