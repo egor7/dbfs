@@ -6,18 +6,20 @@ import (
 	"testing"
 )
 
-var tests = []struct {
+var tfsproc = []struct {
 	name string
-	tx   uint8
-	rx   uint8
-	fid  uint32
-	afid uint32
-	err  string
+	tx   plan9.Fcall
+	rx   plan9.Fcall
+	// tx   uint8
+	// rx   uint8
+	// fid  uint32
+	// afid uint32
+	err string
 }{
-	{"Tversion", plan9.Tversion, plan9.Rversion, plan9.NOFID, plan9.NOFID, ""},
-	{"Tauth", plan9.Tauth, plan9.Rerror, plan9.NOFID, plan9.NOFID, EAUTH},
-	{"Tattach1", plan9.Tattach, plan9.Rerror, plan9.NOFID, plan9.NOFID - 1, EAUTH},
-	{"Tattach2", plan9.Tattach, plan9.Rattach, plan9.NOFID, plan9.NOFID, ""},
+	{"Tversion", plan9.Fcall{Type: plan9.Tversion, Fid: plan9.NOFID, Afid: plan9.NOFID}, plan9.Fcall{Type: plan9.Rversion}, ""},
+	{"Tauth", plan9.Fcall{Type: plan9.Tauth, Fid: plan9.NOFID, Afid: plan9.NOFID}, plan9.Fcall{Type: plan9.Rerror}, EAUTH},
+	{"Tattach1", plan9.Fcall{Type: plan9.Tattach, Fid: plan9.NOFID, Afid: plan9.NOFID - 1}, plan9.Fcall{Type: plan9.Rerror}, EAUTH},
+	{"Tattach2", plan9.Fcall{Type: plan9.Tattach, Fid: plan9.NOFID, Afid: plan9.NOFID}, plan9.Fcall{Type: plan9.Rattach}, ""},
 }
 
 type rwcb struct {
@@ -26,35 +28,30 @@ type rwcb struct {
 
 func (_ *rwcb) Close() error { return nil }
 
-func proc(tp uint8, fid uint32, afid uint32) (*plan9.Fcall, error) {
-	f := &plan9.Fcall{
-		Type:    tp,
-		Fid:     fid,
-		Afid:    afid,
-		Tag:     plan9.NOTAG,
-		Msize:   131072 + plan9.IOHDRSIZE,
-		Version: plan9.VERSION9P,
-	}
+func proc(tx plan9.Fcall) (*plan9.Fcall, error) {
+	tx.Tag = plan9.NOTAG
+	tx.Msize = 131072 + plan9.IOHDRSIZE
+	tx.Version = plan9.VERSION9P
 
 	var b rwcb
-	err := plan9.WriteFcall(&b, f)
+	err := plan9.WriteFcall(&b, &tx)
 	if err != nil {
-		return f, err
+		return nil, err
 	}
 
 	fs := Newfs()
 	err = fs.proc(&b)
 	if err != nil {
-		f, _ = plan9.ReadFcall(&b) // !! cludge design
-		return f, err
+		rx, _ := plan9.ReadFcall(&b) // !! cludge design
+		return rx, err
 	}
 
-	f, err = plan9.ReadFcall(&b)
+	rx, err := plan9.ReadFcall(&b)
 	if err != nil {
-		return f, err
+		return rx, err
 	}
 
-	return f, nil
+	return rx, nil
 }
 
 func TestFs(t *testing.T) {
@@ -66,17 +63,16 @@ func TestFs(t *testing.T) {
 	// b.Write([]byte("Hello "))
 	// fmt.Fprintf(&b, "world!")
 
-	for _, e := range tests {
-		fc, err := proc(e.tx, e.fid, e.afid)
-
+	for _, e := range tfsproc {
+		fc, err := proc(e.tx)
 		if err != nil {
 			t.Errorf("%s: '%s'", e.name, err.Error())
 		}
 		if fc.Type == plan9.Rerror && fc.Ename != e.err {
 			t.Errorf("%s: expected '%s', got '%s'", e.name, e.err, fc.Ename)
 		}
-		if fc.Type != e.rx {
-			t.Errorf("%s: expected (tx->rx): (%d->%d), got (%d->%d)", e.name, e.tx, e.rx, e.tx, fc.Type)
+		if fc.Type != e.rx.Type {
+			t.Errorf("%s: expected (tx->rx): (%d->%d), got (%d->%d)", e.name, e.tx.Type, e.rx.Type, e.tx.Type, fc.Type)
 		}
 	}
 
