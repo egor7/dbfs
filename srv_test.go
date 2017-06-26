@@ -58,14 +58,11 @@ func proc(tx plan9.Fcall) (*plan9.Fcall, error) {
 func TestSrv(t *testing.T) {
 	for _, e := range tsrvproc {
 		fc, err := proc(e.tx)
-		// fatal errors inacceptable
 		if err != nil {
 			t.Errorf("%s: '%s'", e.nm, err.Error())
-		}
-		if fc.Type == plan9.Rerror && fc.Ename != e.err {
+		} else if fc.Type == plan9.Rerror && fc.Ename != e.err {
 			t.Errorf("%s: expected '%s', got '%s'", e.nm, e.err, fc.Ename)
-		}
-		if fc.Type != e.rx.Type {
+		} else if fc.Type != e.rx.Type {
 			t.Errorf("%s: expected (tx->rx): (%d->%d), got (%d->%d)", e.nm, e.tx.Type, e.rx.Type, e.tx.Type, fc.Type)
 		}
 	}

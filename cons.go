@@ -13,11 +13,11 @@ const (
 )
 
 const (
-	EREADFCALL = "E ReadFcall goes wrong"
+	EREADFCALL = "E.srv ReadFcall goes wrong"
 
-	EVERSION = "E msize too small"
-	EAUTH    = "E authentication not required"
-	EBAD     = "E bad fcall"
+	EVERSION = "E.srv: msize too small"
+	EAUTH    = "E.srv: authentication not required"
+	EBAD     = "E.srv: bad fcall"
 
-	ENOPATH = "E file does not exist"
+	ENOPATH = "E.node: File does not exist"
 )
