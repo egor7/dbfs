@@ -18,6 +18,8 @@ const (
 	EVERSION = "E.srv: msize too small"
 	EAUTH    = "E.srv: authentication not required"
 	EBAD     = "E.srv: bad fcall"
+	EEMPPATH = "E.srv: Path empty"
+	EMAXPATH = "E.srv: Too many names in walk"
 
-	ENOPATH = "E.node: File does not exist"
+	ENOPATH = "E.node: Path does not exist"
 )

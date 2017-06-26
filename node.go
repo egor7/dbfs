@@ -7,25 +7,30 @@ import (
 	"errors"
 	"strings"
 	"sync"
+
+	"9fans.net/go/plan9"
 )
 
 type node struct {
 	// {name, tp, fid, qid, ver, prnt, chld}
-	m    sync.Mutex
+	m sync.Mutex
+
 	name string
 	prnt *node
 	chld []*node
+
+	qid plan9.Qid
 }
 
-func Newnode(name string) (*node, error) {
+type stepFunc func(string, *node) error
+
+func (prnt *node) Ins(name string) (*node, error) {
+	// TODO: make
 	return nil, nil
 }
 
-func (prnt *node) Insnode(name string) (*node, error) {
-	return nil, nil
-}
-
-func (prnt *node) Delnode(name string) error {
+func (prnt *node) Del(name string) error {
+	// TODO: make
 	return nil
 }
 
@@ -38,10 +43,16 @@ func (n *node) Updprnt(prnt *node) {
 	}
 }
 
-func (prnt *node) Wlknode(path []string) (*node, error) {
+func (prnt *node) Wlk(path []string, f stepFunc) (*node, error) {
 	n := prnt
 	if n.name != path[0] {
 		return nil, errors.New(ENOPATH)
+	}
+	if f != nil {
+		err := f(path[0], n)
+		if err != nil {
+			return nil, err
+		}
 	}
 	for _, name := range path[1:] {
 		if name == ".." {
@@ -58,6 +69,12 @@ func (prnt *node) Wlknode(path []string) (*node, error) {
 			}
 			if found == false {
 				return nil, errors.New(ENOPATH)
+			}
+		}
+		if f != nil {
+			err := f(name, n)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}

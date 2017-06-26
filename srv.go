@@ -13,15 +13,17 @@ import (
 )
 
 type srv struct {
-	// {nm, tp, lsn}
-	f sync.Mutex
-	//?root   *srv // TODO: rename
+	// {name0, tp, lsn}
+	f    sync.Mutex
+	root *node // TODO: rename
+
+	// free the resouces according to fidref utilization
 	fidref map[uint32]uint32
 }
 
 func Newsrv() *srv {
 	srv := &srv{
-		//?root:   &srv{nm: "/", child: make(map[string]*srv)},
+		root:   &node{name: "root"},
 		fidref: make(map[uint32]uint32),
 	}
 	//?srv.root.prn = srv.root
@@ -70,12 +72,12 @@ func (srv *srv) proc(rwc io.ReadWriteCloser) error {
 		f = srv.Auth
 	case plan9.Tattach:
 		f = srv.Attach
+	case plan9.Twalk:
+		f = srv.Walk
 		//case plan9.Tclunk:
 		//	f = srv.Clunk
 		//case plan9.Tflush:
 		//	f = srv.Flush
-		//case plan9.Twalk:
-		//	f = srv.Walk
 		//case plan9.Topen:
 		//	f = srv.Open
 		//case plan9.Tcreate:
@@ -130,27 +132,58 @@ func (srv *srv) Attach(tx, rx *plan9.Fcall) error {
 	}
 
 	aname := path.Clean(tx.Aname)
+
 	path := split(aname)
 	if len(path) == 0 {
-		// TODO
+		return errors.New(EEMPPATH)
 	}
-	// TODO
-	//srv.walk(aname)
 
-	//root, err := s.srv.Attach(tx.Uname, tx.Aname)
-	//if err != nil {
-	//	return err
-	//}
-	/// defer un(lock(&srv.f))
-	//fid.srv = root.srv
-	//fid.uid = root.uid
-	//
-	//stat := root.srv.Stat()
-	//rx.Qid = stat.Qid
+	n, err := srv.root.Wlk(path, nil)
+	if err != nil {
+		return err
+	}
+
+	// WARN: ignore Uname for now
+	// WARN: ignore Qid for now
+	// stat := root.srv.Stat()
+	// rx.Qid = stat.Qid
+
+	rx.Qid = n.qid
 	return nil
 }
 
-// oth
+func (srv *srv) Walk(tx, rx *plan9.Fcall) error {
+	if len(tx.Wname) > plan9.MAXWELEM {
+		return errors.New(EMAXPATH)
+	}
+
+	wqids := make([]plan9.Qid, len(tx.Wname))
+
+	// TODO: len(tx.Wname) NEXWELEM protection
+	//if len(path) == 0 {
+	//	return errors.New(EEMPPATH)
+	//}
+
+	i := 0
+	_, err := srv.root.Wlk(tx.Wname, func(p string, n *node) error {
+		wqids[i] = n.qid
+		i++
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// WARN: ignore Uname for now
+	// WARN: ignore Qid for now
+	// stat := root.srv.Stat()
+	// rx.Qid = stat.Qid
+
+	rx.Wqid = wqids
+	return nil
+}
+
+// oth: srv:fs:fid
 
 func (srv *srv) Bad(tx, rx *plan9.Fcall) error {
 	return errors.New(EBAD)

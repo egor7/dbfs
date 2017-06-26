@@ -27,13 +27,15 @@ var tnodewlk = []struct {
 	tree node
 	path []string
 	dest string
+	err  string
 }{
-	{"WLK.1", node{name: "r", chld: []*node{&node{name: "a"}}}, []string{"r"}, "r"},
-	{"WLK.2", node{name: "r", chld: []*node{&node{name: "a"}}}, []string{"r", "a"}, "a"},
-	{"WLK.3", node{name: "r", chld: []*node{&node{name: "a", chld: []*node{&node{name: "b"}}}}}, []string{"r", "a", "b"}, "b"},
-	{"WLK.4", node{name: "r", chld: []*node{&node{name: "a", chld: []*node{&node{name: "b"}}}}}, []string{"r", "a", "b", ".."}, "a"},
-	{"WLK.5", node{name: "r", chld: []*node{&node{name: "a", chld: []*node{&node{name: "b"}}}}}, []string{"r", "a", "b", "..", ".."}, "r"},
-	{"WLK.5", node{name: "r", chld: []*node{&node{name: "a", chld: []*node{&node{name: "b"}}}}}, []string{"r", "a", "b", "..", "..", ".."}, "r"},
+	{"WLK.1", node{name: "r", chld: []*node{&node{name: "a"}}}, []string{"r"}, "r", ""},
+	{"WLK.2", node{name: "r", chld: []*node{&node{name: "a"}}}, []string{"r", "a"}, "a", ""},
+	{"WLK.3", node{name: "r", chld: []*node{&node{name: "a", chld: []*node{&node{name: "b"}}}}}, []string{"r", "a", "b"}, "b", ""},
+	{"WLK.4", node{name: "r", chld: []*node{&node{name: "a", chld: []*node{&node{name: "b"}}}}}, []string{"r", "a", "b", ".."}, "a", ""},
+	{"WLK.5", node{name: "r", chld: []*node{&node{name: "a", chld: []*node{&node{name: "b"}}}}}, []string{"r", "a", "b", "..", ".."}, "r", ""},
+	{"WLK.6", node{name: "r", chld: []*node{&node{name: "a", chld: []*node{&node{name: "b"}}}}}, []string{"r", "a", "b", "..", "..", ".."}, "r", ""},
+	{"WLK.7", node{name: "r", chld: []*node{&node{name: "a"}}}, []string{"r", "aa"}, "", ENOPATH},
 }
 
 func TestStrnode(t *testing.T) {
@@ -63,10 +65,14 @@ func TestWlknode(t *testing.T) {
 	for _, o := range tnodewlk {
 		o.tree.Updprnt(nil)
 
-		n, err := o.tree.Wlknode(o.path)
+		n, err := o.tree.Wlk(o.path, nil)
+		if err != nil && err.Error() != o.err {
+			t.Errorf("%s: expected %s, got", o.err, err.Error())
+		}
 		if err != nil {
-			t.Errorf("%s: '%s'", o.name, err.Error())
-		} else if n.name != o.dest {
+			continue
+		}
+		if n.name != o.dest {
 			t.Errorf("%s: expected %s, got %s", o.name, o.dest, n.name)
 		}
 

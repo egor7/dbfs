@@ -18,11 +18,11 @@ var tsplit = []struct {
 
 func TestUtil(t *testing.T) {
 
-	for _, e := range tsplit {
-		dst := path.Join(split(e.src)...)
+	for _, o := range tsplit {
+		n := path.Join(split(o.src)...)
 
-		if dst != e.dst {
-			t.Errorf("expected %s, got %s", e.dst, dst)
+		if n != o.dst {
+			t.Errorf("expected %s, got %s", o.dst, n)
 		}
 	}
 }
