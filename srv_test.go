@@ -1,15 +1,16 @@
 package dbfs
 
 import (
-	"9fans.net/go/plan9"
 	"bytes"
 	"testing"
+
+	"9fans.net/go/plan9"
 )
 
-var tfsproc = []struct {
-	name string
-	tx   plan9.Fcall
-	rx   plan9.Fcall
+var tsrvproc = []struct {
+	nm string
+	tx plan9.Fcall
+	rx plan9.Fcall
 	// tx   uint8
 	// rx   uint8
 	// fid  uint32
@@ -39,8 +40,8 @@ func proc(tx plan9.Fcall) (*plan9.Fcall, error) {
 		return nil, err
 	}
 
-	fs := Newfs()
-	err = fs.proc(&b)
+	srv := Newsrv()
+	err = srv.proc(&b)
 	if err != nil {
 		rx, _ := plan9.ReadFcall(&b) // !! cludge design
 		return rx, err
@@ -54,30 +55,18 @@ func proc(tx plan9.Fcall) (*plan9.Fcall, error) {
 	return rx, nil
 }
 
-func TestFs(t *testing.T) {
-	//s := "Hello"
-	//buf := bytes.NewBufferString(s)
-	//fmt.Fprint(buf, ", World!")
-	//fmt.Println(buf.String())
-	// var b bytes.Buffer // A Buffer needs no initialization.
-	// b.Write([]byte("Hello "))
-	// fmt.Fprintf(&b, "world!")
-
-	for _, e := range tfsproc {
+func TestSrv(t *testing.T) {
+	for _, e := range tsrvproc {
 		fc, err := proc(e.tx)
+		// fatal errors inacceptable
 		if err != nil {
-			t.Errorf("%s: '%s'", e.name, err.Error())
+			t.Errorf("%s: '%s'", e.nm, err.Error())
 		}
 		if fc.Type == plan9.Rerror && fc.Ename != e.err {
-			t.Errorf("%s: expected '%s', got '%s'", e.name, e.err, fc.Ename)
+			t.Errorf("%s: expected '%s', got '%s'", e.nm, e.err, fc.Ename)
 		}
 		if fc.Type != e.rx.Type {
-			t.Errorf("%s: expected (tx->rx): (%d->%d), got (%d->%d)", e.name, e.tx.Type, e.rx.Type, e.tx.Type, fc.Type)
+			t.Errorf("%s: expected (tx->rx): (%d->%d), got (%d->%d)", e.nm, e.tx.Type, e.rx.Type, e.tx.Type, fc.Type)
 		}
 	}
-
-	//m := make(map[int]int)
-	//m[10]++
-	//t.Fatalf("", m[5])
-	//t.Fatalf("", m[10])
 }

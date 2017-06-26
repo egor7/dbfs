@@ -12,3 +12,12 @@ to create, remove, read, and write files.
 # Usage
 
     TODO
+
+# Schema
+//srv{nm, tp, lsn} Plan9 file server, serve 9P Rx->Tx. tp = ver
+//node{nm, tp, fid, qid, ver, prn, chld} File tree
+db{}{}
+dbora{}
+dbmssql{}
+
+// could we build a treefs on a channels?
