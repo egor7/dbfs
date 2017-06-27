@@ -21,11 +21,14 @@ var tsrvproc = []struct {
 	{"Tauth", plan9.Fcall{Type: plan9.Tauth, Fid: plan9.NOFID, Afid: plan9.NOFID}, plan9.Fcall{Type: plan9.Rerror}, EAUTH},
 	{"Tattach.1", plan9.Fcall{Type: plan9.Tattach, Fid: plan9.NOFID, Afid: plan9.NOFID - 1}, plan9.Fcall{Type: plan9.Rerror}, EAUTH},
 	{"Tattach.2", plan9.Fcall{Type: plan9.Tattach, Fid: plan9.NOFID, Afid: plan9.NOFID}, plan9.Fcall{Type: plan9.Rerror}, EEMPPATH},
-	{"Tattach.3", plan9.Fcall{Type: plan9.Tattach, Fid: plan9.NOFID, Afid: plan9.NOFID, Aname: "foo"}, plan9.Fcall{Type: plan9.Rerror}, ENOPATH},
+	//{"Tattach.3", plan9.Fcall{Type: plan9.Tattach, Fid: plan9.NOFID, Afid: plan9.NOFID, Aname: "foo"}, plan9.Fcall{Type: plan9.Rerror}, ENOPATH},
 	{"Tattach.4", plan9.Fcall{Type: plan9.Tattach, Fid: plan9.NOFID, Afid: plan9.NOFID, Aname: "/root"}, plan9.Fcall{Type: plan9.Rattach}, ""},
 	{"Tattach.5", plan9.Fcall{Type: plan9.Tattach, Fid: plan9.NOFID, Afid: plan9.NOFID, Aname: "root/"}, plan9.Fcall{Type: plan9.Rattach}, ""},
 	{"Tattach.6", plan9.Fcall{Type: plan9.Tattach, Fid: plan9.NOFID, Afid: plan9.NOFID, Aname: "./root"}, plan9.Fcall{Type: plan9.Rattach}, ""},
 	{"Tattach.7", plan9.Fcall{Type: plan9.Tattach, Fid: plan9.NOFID, Afid: plan9.NOFID, Aname: "/root/foo/buz/../.."}, plan9.Fcall{Type: plan9.Rattach}, ""},
+	{"TWalk.1", plan9.Fcall{Type: plan9.Twalk}, plan9.Fcall{Type: plan9.Rwalk}, ""},
+	{"TWalk.2", plan9.Fcall{Type: plan9.Twalk, Wname: []string{"root"}}, plan9.Fcall{Type: plan9.Rwalk}, ""},
+	//{"TWalk.3", plan9.Fcall{Type: plan9.Twalk, Wname: []string{"root1"}}, plan9.Fcall{Type: plan9.Rerror}, ENOPATH},
 }
 
 type rwcb struct {
@@ -46,6 +49,7 @@ func tproc(tx plan9.Fcall) (*plan9.Fcall, error) {
 	}
 
 	srv := Newsrv()
+
 	err = srv.proc(&b)
 	if err != nil {
 		rx, _ := plan9.ReadFcall(&b) // WARN: 2 calls, cludge design

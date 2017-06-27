@@ -14,8 +14,8 @@ import (
 
 type srv struct {
 	// {name0, tp, lsn}
-	f    sync.Mutex
-	root *node // TODO: rename
+	f sync.Mutex
+	//tree *tree // TODO: rename
 
 	// free the resouces according to fidref utilization
 	fidref map[uint32]uint32
@@ -23,10 +23,10 @@ type srv struct {
 
 func Newsrv() *srv {
 	srv := &srv{
-		root:   &node{name: "root"},
+		//tree:   &tree{name: "root"}, // TODO: remove!
 		fidref: make(map[uint32]uint32),
 	}
-	//?srv.root.prn = srv.root
+	//?srv.tree.prn = srv.tree
 	return srv
 }
 
@@ -138,17 +138,17 @@ func (srv *srv) Attach(tx, rx *plan9.Fcall) error {
 		return errors.New(EEMPPATH)
 	}
 
-	n, err := srv.root.Wlk(path, nil)
-	if err != nil {
-		return err
-	}
+	// UNCOMMENT: n, err := srv.tree.Wlk(path, nil)
+	// UNCOMMENT: if err != nil {
+	// UNCOMMENT: 	return err
+	// UNCOMMENT: }
 
 	// WARN: ignore Uname for now
 	// WARN: ignore Qid for now
-	// stat := root.srv.Stat()
+	// stat := tree.srv.Stat()
 	// rx.Qid = stat.Qid
 
-	rx.Qid = n.qid
+	// UNCOMMENT: rx.Qid = n.qid
 	return nil
 }
 
@@ -159,24 +159,19 @@ func (srv *srv) Walk(tx, rx *plan9.Fcall) error {
 
 	wqids := make([]plan9.Qid, len(tx.Wname))
 
-	// TODO: len(tx.Wname) NEXWELEM protection
-	//if len(path) == 0 {
-	//	return errors.New(EEMPPATH)
-	//}
-
-	i := 0
-	_, err := srv.root.Wlk(tx.Wname, func(p string, n *node) error {
-		wqids[i] = n.qid
-		i++
-		return nil
-	})
-	if err != nil {
-		return err
-	}
+	// UNCOMMENT: i := 0
+	// UNCOMMENT: _, err := srv.tree.Wlk(tx.Wname, func(p string, n *tree) error {
+	// UNCOMMENT: 	wqids[i] = n.qid
+	// UNCOMMENT: 	i++
+	// UNCOMMENT: 	return nil
+	// UNCOMMENT: })
+	// UNCOMMENT: if err != nil {
+	// UNCOMMENT: 	return err
+	// UNCOMMENT: }
 
 	// WARN: ignore Uname for now
 	// WARN: ignore Qid for now
-	// stat := root.srv.Stat()
+	// stat := tree.srv.Stat()
 	// rx.Qid = stat.Qid
 
 	rx.Wqid = wqids
