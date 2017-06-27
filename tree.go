@@ -3,33 +3,70 @@ Walk tree
 */
 package dbfs
 
-import (
-	"sync"
+import "sync"
 
-	"9fans.net/go/plan9"
+const (
+	ROOT = iota
 )
 
 type node struct {
-	// {name, tp, fid, qid, ver, prnt, chld}
 	m sync.Mutex
 
-	name string
+	Name string
 
-	pqid plan9.Qid
+	//Path uint64
+	Vers uint32
+	Type uint8
+
+	Ppath uint64
 }
 
-type tree map[plan9.Qid]*node
+type tree map[uint64]*node
 
 func Newtree() *tree {
-	t := make(map[plan9.Qid]*node, 1)
+	t := make(map[uint64]*node, 1)
 
-	q := plan9.Qid{Path: 0, Vers: 0, Type: 0}
-	n := node{pqid: q}
-	t[q] = &n
+	n := node{Ppath: ROOT}
+	t[ROOT] = &n
 
 	root := tree(t)
 	return &root
 }
+
+func (t *tree) Mkdir(path []string) error {
+	// walk and create
+	return nil
+}
+
+func (t *tree) chlds(n uint64) []uint64 {
+	c := []uint64{}
+	for p, f := range *t {
+		if f.Ppath == n && f.Ppath != p {
+			c = append(c, p)
+		}
+	}
+	return c
+}
+
+type stepFunc func(string) error
+
+func (t *tree) walk(path []string, f stepFunc) (*node, error) {
+	n := (*t)[ROOT]
+	if len(path) == 0 {
+		return n, nil
+	}
+
+	return n, nil
+}
+
+// dirD := newNode(fs, "d", "", "", 0775|plan9.DMDIR, 3, nil)
+// fileA := newNode(fs, "fa", "", "", 0664, 4, nil)
+
+// Qid: plan9.Qid{
+//     Type: uint8(perm >> 24),
+//     Vers: uint32(0),
+//     Path: path,
+// },
 
 //// Set prnt links on n subtree, for manual tree construction mode
 //func (n *tree) Updprnt(prnt *tree) {

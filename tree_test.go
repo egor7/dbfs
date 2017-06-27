@@ -1,10 +1,6 @@
 package dbfs
 
-import (
-	"testing"
-
-	"9fans.net/go/plan9"
-)
+import "testing"
 
 //import (
 //	"testing"
@@ -85,16 +81,45 @@ import (
 //	}
 //}
 
-func TestNewtree(t *testing.T) {
-	n := Newtree()
-	q0 := plan9.Qid{Path: 0, Vers: 0, Type: 0}
+var ttreechlds = []struct {
+	name string
+	tree []struct{ id, pid uint64 }
+	dest []struct{ pid, cnt uint64 }
+}{
+	{"CHLD.1", []struct{ id, pid uint64 }{{1, 0}, {2, 0}, {3, 0}}, []struct{ pid, cnt uint64 }{{0, 3}, {1, 0}, {2, 0}, {3, 0}}},
+	{"CHLD.2", []struct{ id, pid uint64 }{{1, 0}, {2, 0}, {3, 1}}, []struct{ pid, cnt uint64 }{{0, 2}, {1, 1}}},
+}
 
-	root, found := (*n)[q0]
+func TestNewtree(t *testing.T) {
+	tr := *Newtree()
+
+	root, found := tr[ROOT]
 	if !found {
 		t.Errorf("Newtree: root not found")
 	}
 
-	if root.pqid != q0 {
+	if root.Ppath != ROOT {
 		t.Errorf("Newtree: root parent is not root")
 	}
+}
+
+func TestChlds(t *testing.T) {
+	tr := *Newtree()
+
+	for _, o := range ttreechlds {
+		// create tree
+		for _, n := range o.tree {
+			tr[n.id] = &node{Name: "", Ppath: n.pid}
+		}
+
+		// compare childs counts
+		for _, n := range o.dest {
+			nc := len(tr.chlds(n.pid))
+			if nc != int(n.cnt) {
+				t.Errorf("%s: expected childs count %d, got %d", o.name, n.cnt, nc)
+			}
+		}
+
+	}
+
 }
