@@ -91,6 +91,11 @@ type tnode struct {
 	name    string
 }
 
+type tchild struct {
+	pid uint64
+	cnt int
+}
+
 var ttreenew = []struct {
 	name string
 	root tnode
@@ -101,10 +106,10 @@ var ttreenew = []struct {
 var ttreechlds = []struct {
 	name string
 	tree []tnode
-	dest []struct{ pid, cnt uint64 }
+	dest []tchild
 }{
-	{"CHLD.1", []tnode{{1, 0, ""}, {2, 0, ""}, {3, 0, ""}}, []struct{ pid, cnt uint64 }{{0, 3}, {1, 0}, {2, 0}, {3, 0}}},
-	{"CHLD.2", []tnode{{1, 0, ""}, {2, 0, ""}, {3, 1, ""}}, []struct{ pid, cnt uint64 }{{0, 2}, {1, 1}}},
+	{"CHLD.1", []tnode{{1, 0, ""}, {2, 0, ""}, {3, 0, ""}}, []tchild{{0, 3}, {1, 0}, {2, 0}, {3, 0}}},
+	{"CHLD.2", []tnode{{1, 0, ""}, {2, 0, ""}, {3, 1, ""}}, []tchild{{0, 2}, {1, 1}}},
 }
 
 var ttreewalk = []struct {
@@ -125,6 +130,19 @@ var ttreewalk = []struct {
 	{"WALK.9", []tnode{{1, 0, "a"}}, []string{"b"}, tnode{}, ENOPATH},
 	{"WALK.10", []tnode{{1, 0, "a"}}, []string{"a", "b"}, tnode{}, ENOPATH},
 	{"WALK.11", []tnode{{1, 0, "a"}}, []string{"a", "b", ".."}, tnode{}, ENOPATH},
+}
+
+var ttreemkdir = []struct {
+	name string
+	tree []tnode
+	qid  uint64
+	n    *node
+	dest []tchild
+	err  string
+}{
+	{"MKDIR.1", []tnode{{1, 0, "a"}}, 1, &node{Name: "b"}, []tchild{}, EEXISTS},
+	{"MKDIR.2", []tnode{{1, 0, "a"}}, 2, &node{Name: "b", Ppath: 2}, []tchild{}, ENOPATH},
+	{"MKDIR.3", []tnode{{1, 0, "a"}}, 2, &node{Name: "b", Ppath: 1}, []tchild{{0, 1}, {1, 1}}, ""},
 }
 
 func TestNewtree(t *testing.T) {
@@ -148,11 +166,10 @@ func TestChlds(t *testing.T) {
 
 		for _, n := range o.dest {
 			nc := len(tr.chlds(n.pid))
-			if nc != int(n.cnt) {
+			if n.cnt != nc {
 				t.Errorf("%s: expected childs count %d, got %d", o.name, n.cnt, nc)
 			}
 		}
-
 	}
 }
 
@@ -163,7 +180,7 @@ func TestWalk(t *testing.T) {
 			tr[n.id] = &node{Name: n.name, Ppath: n.pid}
 		}
 
-		id, n, err := tr.walk(o.path, nil)
+		id, n, err := tr.Walk(o.path, nil)
 		if err != nil {
 			if o.err != err.Error() {
 				t.Errorf("%s: expected %s, got %s", o.name, o.err, err.Error())
@@ -175,6 +192,30 @@ func TestWalk(t *testing.T) {
 		}
 		if o.dest.id != id {
 			t.Errorf("%s: expected %d, got %d", o.name, o.dest.id, id)
+		}
+	}
+}
+
+func TestMkdir(t *testing.T) {
+	for _, o := range ttreemkdir {
+		tr := *Newtree()
+		for _, n := range o.tree {
+			tr[n.id] = &node{Name: n.name, Ppath: n.pid}
+		}
+
+		err := tr.Mkdir(o.qid, o.n)
+		if err != nil {
+			if o.err != err.Error() {
+				t.Errorf("%s: expected %s, got %s", o.name, o.err, err.Error())
+			}
+			continue
+		}
+
+		for _, n := range o.dest {
+			nc := len(tr.chlds(n.pid))
+			if n.cnt != nc {
+				t.Errorf("%s: expected childs count %d, got %d", o.name, n.cnt, nc)
+			}
 		}
 	}
 }
