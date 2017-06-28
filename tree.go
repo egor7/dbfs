@@ -3,7 +3,11 @@ Walk tree
 */
 package dbfs
 
-import "sync"
+import (
+	"errors"
+	"fmt"
+	"sync"
+)
 
 const (
 	ROOT = iota
@@ -33,11 +37,6 @@ func Newtree() *tree {
 	return &root
 }
 
-func (t *tree) Mkdir(path []string) error {
-	// walk and create
-	return nil
-}
-
 func (t *tree) chlds(n uint64) []uint64 {
 	c := []uint64{}
 	for p, f := range *t {
@@ -48,24 +47,63 @@ func (t *tree) chlds(n uint64) []uint64 {
 	return c
 }
 
+func (t *tree) Mkdir(path []string) error {
+	t.walk(path, func(dir string) error {
+		//TODO: create
+		fmt.Println("creating: ", dir)
+		return nil
+	})
+	return nil
+}
+
 type stepFunc func(string) error
 
-func (t *tree) walk(path []string, f stepFunc) (*node, error) {
-	n := (*t)[ROOT]
+func (t *tree) walk(path []string, step stepFunc) (uint64, *node, error) {
+	fmt.Println("walk")
+	id := uint64(ROOT)
+	n := (*t)[id]
 	if len(path) == 0 {
-		return n, nil
+		return id, n, nil
 	}
 
-	return n, nil
+	for _, dir := range path {
+		fmt.Println("checking: ", dir)
+
+		if step != nil {
+			err := step(dir)
+			if err != nil {
+				return 0, nil, err
+			}
+		}
+
+		if dir == ".." {
+			id = n.Ppath
+			n = (*t)[id]
+		} else {
+			found := false
+			for _, cid := range t.chlds(id) {
+				if (*t)[cid].Name == dir {
+					found = true
+					id = cid
+					n = (*t)[id]
+				}
+			}
+			if found == false {
+				return 0, nil, errors.New(ENOPATH)
+			}
+		}
+	}
+
+	return id, n, nil
 }
 
 // dirD := newNode(fs, "d", "", "", 0775|plan9.DMDIR, 3, nil)
 // fileA := newNode(fs, "fa", "", "", 0664, 4, nil)
 
 // Qid: plan9.Qid{
-//     Type: uint8(perm >> 24),
-//     Vers: uint32(0),
 //     Path: path,
+//     Vers: uint32(0),
+//     Type: uint8(perm >> 24),
 // },
 
 //// Set prnt links on n subtree, for manual tree construction mode

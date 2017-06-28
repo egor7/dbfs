@@ -2,6 +2,11 @@ package dbfs
 
 import "testing"
 
+const (
+	ENOROOT     = "Newtree: root not found"
+	ENOROOTPRNT = "Newtree: root parent is not root"
+)
+
 //import (
 //	"testing"
 //)
@@ -81,38 +86,66 @@ import "testing"
 //	}
 //}
 
+type tnode struct {
+	id, pid uint64
+	name    string
+}
+
+var ttreenew = []struct {
+	name string
+	root tnode
+}{
+	{"NEW.1", tnode{ROOT, ROOT, ""}},
+}
+
 var ttreechlds = []struct {
 	name string
-	tree []struct{ id, pid uint64 }
+	tree []tnode
 	dest []struct{ pid, cnt uint64 }
 }{
-	{"CHLD.1", []struct{ id, pid uint64 }{{1, 0}, {2, 0}, {3, 0}}, []struct{ pid, cnt uint64 }{{0, 3}, {1, 0}, {2, 0}, {3, 0}}},
-	{"CHLD.2", []struct{ id, pid uint64 }{{1, 0}, {2, 0}, {3, 1}}, []struct{ pid, cnt uint64 }{{0, 2}, {1, 1}}},
+	{"CHLD.1", []tnode{{1, 0, ""}, {2, 0, ""}, {3, 0, ""}}, []struct{ pid, cnt uint64 }{{0, 3}, {1, 0}, {2, 0}, {3, 0}}},
+	{"CHLD.2", []tnode{{1, 0, ""}, {2, 0, ""}, {3, 1, ""}}, []struct{ pid, cnt uint64 }{{0, 2}, {1, 1}}},
+}
+
+var ttreewalk = []struct {
+	name string
+	tree []tnode
+	path []string
+	dest tnode
+	err  string
+}{
+	{"WALK.1", []tnode{{1, 0, "a"}}, []string{}, tnode{ROOT, 0, ""}, ""},
+	{"WALK.2", []tnode{{1, 0, "a"}}, []string{".."}, tnode{ROOT, 0, ""}, ""},
+	{"WALK.3", []tnode{{1, 0, "a"}}, []string{"..", ".."}, tnode{ROOT, 0, ""}, ""},
+	{"WALK.4", []tnode{{1, 0, "a"}}, []string{"a", "..", ".."}, tnode{ROOT, 0, ""}, ""},
+	{"WALK.5", []tnode{{1, 0, "a"}}, []string{"a"}, tnode{1, 0, "a"}, ""},
+	{"WALK.6", []tnode{{1, 0, "a"}, {2, 1, "b"}}, []string{"a", "b"}, tnode{2, 0, "b"}, ""},
+	{"WALK.7", []tnode{{1, 0, "a"}, {2, 1, "b"}}, []string{"a", "b", ".."}, tnode{1, 0, "a"}, ""},
+	{"WALK.8", []tnode{{1, 0, "a"}, {2, 1, "b"}}, []string{"a", "b", "..", ".."}, tnode{ROOT, 0, ""}, ""},
+	{"WALK.9", []tnode{{1, 0, "a"}}, []string{"b"}, tnode{}, ENOPATH},
+	{"WALK.10", []tnode{{1, 0, "a"}}, []string{"a", "b"}, tnode{}, ENOPATH},
+	{"WALK.11", []tnode{{1, 0, "a"}}, []string{"a", "b", ".."}, tnode{}, ENOPATH},
 }
 
 func TestNewtree(t *testing.T) {
-	tr := *Newtree()
-
-	root, found := tr[ROOT]
-	if !found {
-		t.Errorf("Newtree: root not found")
-	}
-
-	if root.Ppath != ROOT {
-		t.Errorf("Newtree: root parent is not root")
+	for _, o := range ttreenew {
+		tr := *Newtree()
+		root, found := tr[o.root.id]
+		if !found {
+			t.Errorf(ENOROOT)
+		} else if root.Ppath != o.root.pid {
+			t.Errorf(ENOROOTPRNT)
+		}
 	}
 }
 
 func TestChlds(t *testing.T) {
-	tr := *Newtree()
-
 	for _, o := range ttreechlds {
-		// create tree
+		tr := *Newtree()
 		for _, n := range o.tree {
-			tr[n.id] = &node{Name: "", Ppath: n.pid}
+			tr[n.id] = &node{Name: n.name, Ppath: n.pid}
 		}
 
-		// compare childs counts
 		for _, n := range o.dest {
 			nc := len(tr.chlds(n.pid))
 			if nc != int(n.cnt) {
@@ -121,5 +154,27 @@ func TestChlds(t *testing.T) {
 		}
 
 	}
+}
 
+func TestWalk(t *testing.T) {
+	for _, o := range ttreewalk {
+		tr := *Newtree()
+		for _, n := range o.tree {
+			tr[n.id] = &node{Name: n.name, Ppath: n.pid}
+		}
+
+		id, n, err := tr.walk(o.path, nil)
+		if err != nil {
+			if o.err != err.Error() {
+				t.Errorf("%s: expected %s, got %s", o.name, o.err, err.Error())
+			}
+			continue
+		}
+		if o.dest.name != n.Name {
+			t.Errorf("%s: expected %s, got %s", o.name, o.dest.name, n.Name)
+		}
+		if o.dest.id != id {
+			t.Errorf("%s: expected %d, got %d", o.name, o.dest.id, id)
+		}
+	}
 }

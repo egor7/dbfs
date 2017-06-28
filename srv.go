@@ -23,7 +23,6 @@ type srv struct {
 
 func Newsrv() *srv {
 	srv := &srv{
-		//tree:   &tree{name: "root"}, // TODO: remove!
 		fidref: make(map[uint32]uint32),
 	}
 	//?srv.tree.prn = srv.tree
