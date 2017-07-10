@@ -7,85 +7,6 @@ const (
 	ENOROOTPRNT = "Newtree: root parent is not root"
 )
 
-//import (
-//	"testing"
-//)
-//
-//var ttreestr = []struct {
-//	name string
-//	tree tree
-//	dest string
-//}{
-//	{"STR.1", tree{name: "r", chld: nil}, "r"},
-//	{"STR.2", tree{name: "r", chld: []*tree{&tree{name: "a"}}}, "r{a}"},
-//	{"STR.3", tree{name: "r", chld: []*tree{&tree{name: "a"}, &tree{name: "b", chld: []*tree{&tree{name: "c1"}, &tree{name: "c2"}, &tree{name: "c3"}}}, &tree{name: "d"}, &tree{name: "e"}}}, "r{a,b{c1,c2,c3},d,e}"},
-//}
-//
-//var ttreeupd = []struct {
-//	name string
-//	tree tree
-//	dest string
-//}{
-//	{"UPD.1", tree{name: "r", chld: []*tree{&tree{name: "a"}}}, "r"},
-//}
-//
-//var ttreewlk = []struct {
-//	name string
-//	tree tree
-//	path []string
-//	dest string
-//	err  string
-//}{
-//	{"WLK.1", tree{name: "r", chld: []*tree{&tree{name: "a"}}}, []string{"r"}, "r", ""},
-//	{"WLK.2", tree{name: "r", chld: []*tree{&tree{name: "a"}}}, []string{"r", "a"}, "a", ""},
-//	{"WLK.3", tree{name: "r", chld: []*tree{&tree{name: "a", chld: []*tree{&tree{name: "b"}}}}}, []string{"r", "a", "b"}, "b", ""},
-//	{"WLK.4", tree{name: "r", chld: []*tree{&tree{name: "a", chld: []*tree{&tree{name: "b"}}}}}, []string{"r", "a", "b", ".."}, "a", ""},
-//	{"WLK.5", tree{name: "r", chld: []*tree{&tree{name: "a", chld: []*tree{&tree{name: "b"}}}}}, []string{"r", "a", "b", "..", ".."}, "r", ""},
-//	{"WLK.6", tree{name: "r", chld: []*tree{&tree{name: "a", chld: []*tree{&tree{name: "b"}}}}}, []string{"r", "a", "b", "..", "..", ".."}, "r", ""},
-//	{"WLK.7", tree{name: "r", chld: []*tree{&tree{name: "a"}}}, []string{"r", "aa"}, "", ENOPATH},
-//}
-//
-//func TestStrtree(t *testing.T) {
-//	for _, o := range ttreestr {
-//		s := o.tree.String()
-//		if s != o.dest {
-//			t.Errorf("%s: expected %s, got %s", o.name, o.dest, s)
-//		}
-//	}
-//}
-//
-//func TestUpdtree(t *testing.T) {
-//	for _, o := range ttreeupd {
-//		o.tree.Updprnt(nil)
-//
-//		n := o.tree.chld[0].prnt
-//		if n == nil {
-//			t.Errorf("%s: '%s'", o.name, "n is nil")
-//		} else if n.name != o.dest {
-//			t.Errorf("%s: expected %s, got %s", o.name, o.dest, n.name)
-//		}
-//
-//	}
-//}
-//
-//func TestWlktree(t *testing.T) {
-//	for _, o := range ttreewlk {
-//		o.tree.Updprnt(nil)
-//
-//		n, err := o.tree.Wlk(o.path, nil)
-//		if err != nil && err.Error() != o.err {
-//			t.Errorf("%s: expected %s, got", o.err, err.Error())
-//		}
-//		if err != nil {
-//			continue
-//		}
-//		if n.name != o.dest {
-//			t.Errorf("%s: expected %s, got %s", o.name, o.dest, n.name)
-//		}
-//
-//	}
-//}
-
 type tnode struct {
 	id, pid uint64
 	name    string
@@ -140,9 +61,12 @@ var ttreemkdir = []struct {
 	dest []tchild
 	err  string
 }{
-	{"MKDIR.1", []tnode{{1, 0, "a"}}, 1, &node{Name: "b"}, []tchild{}, EEXISTS},
+	{"MKDIR.1", []tnode{{1, 0, "a"}}, 1, &node{Name: "b"}, []tchild{}, EQEXISTS},
 	{"MKDIR.2", []tnode{{1, 0, "a"}}, 2, &node{Name: "b", Ppath: 2}, []tchild{}, ENOPATH},
 	{"MKDIR.3", []tnode{{1, 0, "a"}}, 2, &node{Name: "b", Ppath: 1}, []tchild{{0, 1}, {1, 1}}, ""},
+	{"MKDIR.4", []tnode{{1, 0, "a"}, {2, 1, "b"}}, 2, &node{Name: "b", Ppath: 1}, []tchild{}, EQEXISTS},
+	{"MKDIR.5", []tnode{{1, 0, "a"}, {2, 0, "b"}}, 3, &node{Name: "b", Ppath: 0}, []tchild{}, ENEXISTS},
+	{"MKDIR.6", []tnode{{1, 0, "a"}, {2, 0, "b"}}, 3, &node{Name: "c", Ppath: 0}, []tchild{{0, 3}}, ""},
 }
 
 func TestNewtree(t *testing.T) {
@@ -186,6 +110,8 @@ func TestWalk(t *testing.T) {
 				t.Errorf("%s: expected %s, got %s", o.name, o.err, err.Error())
 			}
 			continue
+		} else if o.err != "" {
+			t.Errorf("%s: expected %s, got nil", o.name, o.err)
 		}
 		if o.dest.name != n.Name {
 			t.Errorf("%s: expected %s, got %s", o.name, o.dest.name, n.Name)
@@ -209,6 +135,8 @@ func TestMkdir(t *testing.T) {
 				t.Errorf("%s: expected %s, got %s", o.name, o.err, err.Error())
 			}
 			continue
+		} else if o.err != "" {
+			t.Errorf("%s: expected %s, got nil", o.name, o.err)
 		}
 
 		for _, n := range o.dest {

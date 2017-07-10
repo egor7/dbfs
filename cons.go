@@ -21,6 +21,7 @@ const (
 	EEMPPATH = "E.srv: Path empty"
 	EMAXPATH = "E.srv: Too many names in walk"
 
-	ENOPATH = "E.tree: Path does not exist"
-	EEXISTS = "E.tree: Path already exist"
+	ENOPATH  = "E.tree: Path does not exist"
+	EQEXISTS = "E.tree: Path Qid already exist"
+	ENEXISTS = "E.tree: Path Name already exist"
 )

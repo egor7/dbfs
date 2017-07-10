@@ -18,9 +18,9 @@ type node struct {
 
 	Name string
 
-	//Path uint64
-	Vers uint32
-	Type uint8
+	//Qpath uint64
+	Qvers uint32
+	Qtype uint8
 
 	Ppath uint64
 }
@@ -37,10 +37,10 @@ func Newtree() *tree {
 	return &root
 }
 
-func (t *tree) chlds(n uint64) []uint64 {
+func (t *tree) chlds(qpath uint64) []uint64 {
 	c := []uint64{}
 	for p, f := range *t {
-		if f.Ppath == n && f.Ppath != p {
+		if f.Ppath == qpath && f.Ppath != p {
 			c = append(c, p)
 		}
 	}
@@ -49,11 +49,23 @@ func (t *tree) chlds(n uint64) []uint64 {
 
 func (t *tree) Mkdir(qpath uint64, n *node) error {
 	if _, found := (*t)[qpath]; found {
-		return errors.New(EEXISTS)
+		return errors.New(EQEXISTS)
 	}
 
 	if _, found := (*t)[n.Ppath]; !found {
 		return errors.New(ENOPATH)
+	}
+
+	//fmt.Println(qpath)
+	found := false
+	for _, qc := range t.chlds(n.Ppath) {
+		//fmt.Println((*t)[qc].Name, " -- ", n.Name)
+		if (*t)[qc].Name == n.Name {
+			found = true
+		}
+	}
+	if found == true {
+		return errors.New(ENEXISTS)
 	}
 
 	(*t)[qpath] = n
@@ -79,10 +91,10 @@ func (t *tree) Walk(path []string, step stepFunc) (uint64, *node, error) {
 			n = (*t)[qpath]
 		} else {
 			found := false
-			for _, cqpath := range t.chlds(qpath) {
-				if (*t)[cqpath].Name == dir {
+			for _, qc := range t.chlds(qpath) {
+				if (*t)[qc].Name == dir {
 					found = true
-					qpath = cqpath
+					qpath = qc
 					n = (*t)[qpath]
 				}
 			}
