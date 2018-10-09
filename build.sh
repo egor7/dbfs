@@ -1,5 +1,5 @@
 #!/bin/sh
-goimports -w .
+#goimports -w .
 go fmt
-#go build
-go test
+go build
+#go test

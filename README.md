@@ -1,6 +1,6 @@
 # DBFS
 
-Dbfs starts a 9P2000 file server making your db been visible as a file tree.
+Dbfs starts a 9P2000 file server representing a db as a file system.
 
 # 9P2000
 
@@ -16,8 +16,9 @@ to create, remove, read, and write files.
 # Schema
 //srv{nm, tp, lsn} Plan9 file server, serve 9P Rx->Tx. tp = ver
 //node{nm, tp, fid, qid, ver, prn, chld} File tree
-db{}{}
-dbora{}
-dbmssql{}
+oradb{}
+mssqldb{}
+sqlitedb{}
 
-// could we build a treefs on a channels?
+# Links
+https://coderwall.com/p/wohavg/creating-a-simple-tcp-server-in-go
