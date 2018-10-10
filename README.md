@@ -21,4 +21,14 @@ mssqldb{}
 sqlitedb{}
 
 # Links
+A: Just an article with an example
 https://coderwall.com/p/wohavg/creating-a-simple-tcp-server-in-go
+
+G: A well-style go project, not small, and not so big as perkeep
+https://github.com/gopherjs/gopherjs/wiki/Developer-Guidelines
+
+D: Effective go
+https://golang.org/doc/effective_go.html
+
+D: Go review
+https://github.com/golang/go/wiki/CodeReviewComments
