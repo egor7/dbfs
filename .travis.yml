@@ -1,0 +1,12 @@
+language: go
+
+go:
+  - 1.11
+
+script:
+  - go test -race
+#  - go test -coverprofile=coverage.txt -covermode=atomic -race
+
+# CODECOV_TOKEN set in travisCI ENV
+#after_success:
+#  - bash <(curl -s https://codecov.io/bash)
