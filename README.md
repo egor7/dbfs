@@ -1,4 +1,4 @@
-# DBFS
+# DBFS [![Build Status](https://travis-ci.org/egor7/dbfs.svg?branch=master)](https://travis-ci.org/egor7/dbfs)
 
 Dbfs starts a 9P2000 file server representing a db as a file system.
 
