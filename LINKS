@@ -1,0 +1,4 @@
+=== SQLite
+conn string - https://www.connectionstrings.com/sqlite/
+ref spec - https://www.tcl.tk/man/tcl8.6/TclCmd/expr.htm
+samples - https://wiki.tcl-lang.org/page/tcl+sqlite+examples

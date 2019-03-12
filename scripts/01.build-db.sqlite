@@ -1,0 +1,38 @@
+#!/usr/bin/tclsh
+
+# Create DB
+package require sqlite3
+sqlite3 db mydb.sqlite
+
+# Check reentrance
+set tbl [db eval {SELECT tbl_name FROM sqlite_master WHERE name='t1'}]
+if {$tbl ne ""} {
+    puts "A sample schema already exists, exiting..."
+	db close
+	return
+}
+
+# Print table cols
+# db eval "SELECT * FROM sqlite_master LIMIT 1" x {set columnName $x(*)} 
+# puts $columnName
+
+# Create Table
+puts "Creating a sample schama..."
+db eval {CREATE TABLE IF NOT EXISTS t1(a TEXT, b INTEGER)}
+db eval {
+ INSERT INTO t1 VALUES('one',1);
+ INSERT INTO t1 VALUES('two',2);
+ INSERT INTO t1 VALUES(NULL,3);
+}
+
+# Test Query
+# db eval {SELECT * FROM t1} v {parray v}
+db eval {SELECT * FROM t1} x {
+  foreach v $x(*) {
+    puts "$v = $x($v)"
+  }
+  puts ""
+}
+
+# Done
+db close
