@@ -1,4 +1,14 @@
 === SQLite
-conn string - https://www.connectionstrings.com/sqlite/
-ref spec - https://www.tcl.tk/man/tcl8.6/TclCmd/expr.htm
-samples - https://wiki.tcl-lang.org/page/tcl+sqlite+examples
+conn string: https://www.connectionstrings.com/sqlite/
+ref spec: https://www.tcl.tk/man/tcl8.6/TclCmd/expr.htm
+samples: https://wiki.tcl-lang.org/page/tcl+sqlite+examples
+go sqlite driver: https://github.com/mattn/go-sqlite3
+
+=== Go database access
+idiomatic way: http://go-database-sql.org/
+
+=== Go
+get current function name: https://stackoverflow.com/questions/25927660/how-to-get-the-current-function-name
+get caller function name: http://moazzam-khan.com/blog/golang-get-the-function-callers-name/
+quiz: https://yourbasic.org/golang/gotcha/
+defer: https://blog.learngoprogramming.com/gotchas-of-defer-in-go-1-8d070894cb01
